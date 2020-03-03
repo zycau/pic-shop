@@ -1,0 +1,30 @@
+{
+  "name": "mern-pic-shop",
+  "version": "1.0.0",
+  "description": "Use MERN stack to build a pic-shop application",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "server": "nodemon server.js",
+    "client": "npm start --prefix client",
+    "client-install": "npm install --prefix client",
+    "dev": "concurrently \"npm run client\" \"npm run server\"",
+    "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false npm install --prefix client && npm run build --prefix client"
+  },
+  "keywords": [
+    "MERN"
+  ],
+  "author": "Yucheng Zhou",
+  "license": "MIT",
+  "dependencies": {
+    "bcrypt": "^4.0.0",
+    "concurrently": "^5.1.0",
+    "config": "^3.3.0",
+    "express": "^4.17.1",
+    "jsonwebtoken": "^8.5.1",
+    "mongoose": "^5.9.2"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.2"
+  }
+}

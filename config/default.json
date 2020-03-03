@@ -1,0 +1,4 @@
+{
+    "MongoURI": "mongodb+srv://zyc:zyc@yz-qy37f.mongodb.net/pic-shop?retryWrites=true&w=majority",
+    "JWTkey": "picShopJWTKey"
+}
