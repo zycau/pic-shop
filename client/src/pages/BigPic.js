@@ -1,18 +1,18 @@
 import React, {useContext} from 'react'
 import {useParams} from 'react-router-dom'
 import {picContext} from '../context/context'
+import {BigImgCard} from '../component/BigImgCard'
 
 export const BigPic = ()=>{
     const {id} = useParams()
     
-    const {pics,toggleFavor,toggleCart,user} = useContext(picContext)
+    const {pics, toggleFavor, toggleCart, user} = useContext(picContext)
  
-    const {url} = pics.find(i=>i._id===id)
-
-    return (
-        <main className='big-pic'>
-            
-            <img src={url} alt='this is big'/>
+    const {url, tag} = pics.find(i=>i._id===id)
+    
+    return (        
+        <main className='big-pic'>            
+            <BigImgCard url={url} tag={tag} />
             {
                 user.email && (
                     user.favorite.includes(id) ? 
@@ -30,4 +30,5 @@ export const BigPic = ()=>{
             
         </main>
     )
+    
 }

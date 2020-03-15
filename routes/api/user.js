@@ -12,7 +12,7 @@ const router = express.Router()
 // GET api/user
 // Get user information
 // Private user
-router.get('/', auth, (req, res)=>{
+router.get('/', auth, (req, res)=>{    
     const {id} = req.user
     User.findById(id)
         .select('-password')
@@ -21,7 +21,7 @@ router.get('/', auth, (req, res)=>{
         })
         .catch(err=>{
             if(err) throw err
-        })
+        })       
 })
 
 // POST api/user
@@ -49,9 +49,7 @@ router.post('/register', (req, res)=>{
             msg: 'Your password must be 6 to 12 characters long'
         })
     }
-    
-    // Register
-    else{
+    else{ // Register
         User.findOne({email})
         .then(user=>{
             // If user exists
@@ -159,40 +157,64 @@ router.post('/', (req, res)=>{
 // Modify favorite, inCart, haveBought
 // Private user
 router.put('/', auth, (req, res)=>{
-    const {favorite, inCart, haveBought} = req.body
+    const {toggleFavorite, toggleInCart, addHaveBought} = req.body
     const {id} = req.user
+    
+    // Add or remove an item to favorite array in DB
+    if(toggleFavorite){        
+        const errCatch = ()=>{
+            res.status(500).json({
+                errType: 'updateFail',
+                msg: 'Could not update favorite pics'
+            })
+        }
+        
+        // {new: true} means will return updated item
+        User.findById(id, (err, user)=>{
+            // If favorite item already exists in DB favorite array?
+            !user.favorite.includes(toggleFavorite) ?
+                User.findByIdAndUpdate(id, {$addToSet: {"favorite": toggleFavorite}}, {new: true})
+                    .then(user=>res.json(user.favorite))
+                    .catch(errCatch) :
+                User.findByIdAndUpdate(id, {$pull: {"favorite": toggleFavorite}}, {new: true})
+                    .then(user=>res.json(user.favorite))
+                    .catch(errCatch)
+        })          
+    }   
 
-    if(favorite){        
-        User.findByIdAndUpdate(id, {"favorite": favorite}, {new: true}, (err, updated)=>{
-            if(err){
-                res.status(500).json({
-                    errType: 'updateFail',
-                    msg: 'Could not update favorite pics'
-                })
-            }           
-            res.json(updated.favorite)
-        })        
-    }
-    if(inCart){
-        User.findByIdAndUpdate(id, {"inCart": inCart}, {new: true}, (err, updated)=>{
-            if(err){
-                res.status(500).json({
-                    errType: 'updateFail',
-                    msg: 'Could not update cart items'
-                })
-            }           
-            res.json(updated.inCart)
+    // Add or remove an item to inCart array in DB
+    if(toggleInCart){
+        const errCatch = ()=>{
+            res.status(500).json({
+                errType: 'updateFail',
+                msg: 'Could not update cart items'
+            })
+        }
+
+        User.findById(id, (err, user)=>{
+            // If inCart item already exists in DB inCart array?
+            !user.inCart.includes(toggleInCart) ?
+                User.findByIdAndUpdate(id, {$addToSet: {"inCart": toggleInCart}}, {new: true})
+                    .then(user=>res.json(user.inCart))
+                    .catch(errCatch) :
+                User.findByIdAndUpdate(id, {$pull: {"inCart": toggleInCart}}, {new: true})
+                    .then(user=>res.json(user.inCart))
+                    .catch(errCatch)
         })  
     }
-    if(haveBought){
-        User.findByIdAndUpdate(id, {"haveBought": haveBought}, {new: true}, (err, updated)=>{
+
+    // Add "haveBought" array to DB, and clear "inCart" array
+    if(addHaveBought){        
+        // Add all elements of addHaveBought array in DB haveBought array
+        // Clear inCart array
+        User.findByIdAndUpdate(id, {$set: {"inCart": []}, $push: {"haveBought": {$each: addHaveBought}}}, {new: true}, (err, updated)=>{
             if(err){
                 res.status(500).json({
                     errType: 'updateFail',
                     msg: 'Could not place order'
                 })
             }           
-            res.json(updated.haveBought)
+            res.json(updated)
         })  
     }
 })

@@ -8,89 +8,212 @@ export const PicProvider = ({children})=>{
     // Define the states
     const [pics, setPics] = useState([])
     
-    const [user, setUser] = useState({
-        name: 'aaa',
-        email: 'aaa@gmail.com',
-        favorite: [],
-        inCart: [],
-        haveBought: []
-    })
+    const [isLoading, setIsLoading] = useState(false)
+
+    const [isAuthenticated, setIsAuthenticated] = useState(false)
+
+    const [user, setUser] = useState({})
 
     const [err, setErr] = useState({
         msg: '',
         status: ''
-    })
-
-    // const [cartItem, setCartItem] = useState([])
+    })    
 
     // User actions
     // Get all pics and auth the user
     useEffect(()=>{
+        setIsLoading(true)
+
+        // Get all pics
         axios.get('/api/pics')
             .then(res=>setPics(res.data))
+            .then(()=>setIsLoading(false))
             .catch(err=>setErr({
                 ...err,
                 status: err.response.status
-            }))        
+            }))
         
-    }, [])
+        // If token exists, auth the user
+        if(localStorage.getItem('token')){
+            const config = {
+                headers: {
+                    "x-auth-token": localStorage.getItem('token')
+                }
+            }
+            axios.get('/api/user', config)
+                .then(res=>{
+                    setUser(res.data)
+                    setIsAuthenticated(true)
+                })
+                .catch(err=>{
+                    localStorage.removeItem('token')
+                    setErr({
+                        status: err.response.status,
+                        msg: err.response.msg
+                    })
+                })     
+        }           
+    }, [])    
     
+    // User actions
     const toggleFavor = (id)=>{        
-        // modify db
+        // Define headers and body
+        const config = {
+            headers: {
+                "Content-type": "application/json",
+                "x-auth-token": localStorage.getItem('token')
+            }
+        }
+
+        const body = JSON.stringify({
+            'toggleFavorite': id
+        })
         
-        setUser(prev=>({
-            ...prev,
-            favorite: prev.favorite.includes(id) ? 
-                        prev.favorite.filter(i=>i!==id) :
-                        [...prev.favorite, id]
-        }))       
-    }
-    // new Promise(resolve=>{
-    //         toggleFavor('5e59d2a1a76aec1c90700261')
-    //         resolve('finish')
-    //     }).then((data)=>console.log(user,data))
+        // modify db, let server to judge if it should add or remove item
+        axios.put('/api/user', body, config)
+            .then(res=>{                
+                setUser(prev=>({
+                    ...prev,
+                    favorite: res.data
+                }))
+            })
+            .catch(err=>{
+                console.log(err.response.data)
+                setErr({
+                    status: err.response.status,
+                    msg: err.response.data.msg
+                })
+            })           
+    }    
 
     const toggleCart = (id)=>{
-        // modify db
-        
-        setUser(prev=>({
-            ...prev,
-            inCart: prev.inCart.includes(id) ?
-                    prev.inCart.filter(i=>i!==id) :
-                    [...prev.inCart, id]
-        }))
-    }
+        // Define headers and body
+        const config = {
+            headers: {
+                "Content-type": "application/json",
+                "x-auth-token": localStorage.getItem('token')
+            }
+        }
+        const body = JSON.stringify({
+            'toggleInCart': id
+        })
 
-    // const outCart = (id)=>{
-    //     setCartItem(prev=>
-    //         prev.filter(i=>i.id!==id)
-    //     )
-    // }
+        // modify db, let server to judge if it should add or remove item
+        axios.put('/api/user', body, config)
+            .then(res=>{
+                setUser(prev=>({
+                    ...prev,
+                    inCart: res.data
+                }))
+            })
+            .catch(err=>{
+                setErr({
+                    status: err.response.status,
+                    msg: err.response.msg
+                })
+            })        
+    }
     
     const placeOrder = ()=>{
-        // modify db
+        // Define headers and body
+        const config = {
+            headers: {
+                "Content-type": "application/json",
+                "x-auth-token": localStorage.getItem('token')
+            }
+        }
+        const body = JSON.stringify({
+            'addHaveBought': user.inCart
+        })
 
-        setUser(prev=>({
-            ...prev,
-            haveBought: prev.haveBought.concat(prev.inCart),
-            inCart: []
-        }))
+        // Modify DB, add items in cart to haveBought
+        axios.put('/api/user', body, config)
+            .then(res=>{
+                setUser(res.data)
+            })
+    }
+
+    
+    // User account
+    const register = (email, name, password)=>{
+        
+        // Define headers and body
+        const config = {
+            headers: {
+                "Content-type": "application/json"
+            }
+        }
+
+        const body = JSON.stringify({email, name, password})
+
+        axios.post('/api/user/register', body, config)
+            .then(res=>{
+                // Store token in local storage
+                localStorage.setItem('token', res.data.token)
+                setUser(res.data.user)
+                setIsAuthenticated(true)
+                setErr({                   
+                    msg: '',
+                    status: ''                    
+                })
+            })
+            .catch(err=>{
+                setErr({
+                    status: err.response.status,
+                    msg: err.response.data.msg
+                })                
+            })
+    }
+
+    const login = (email, password)=>{
+        // Define headers and body
+        const config = {
+            headers: {
+                "Content-type": "application/json"
+            }
+        }
+
+        const body = JSON.stringify({email, password})
+        
+        axios.post('/api/user', body, config)
+            .then(res=>{
+                // Store token in local storage
+                localStorage.setItem('token', res.data.token)
+                console.log(res.data.user)
+                
+                setUser(res.data.user)
+                setIsAuthenticated(true)
+                setErr({                   
+                    msg: '',
+                    status: ''                    
+                })
+
+                console.log(res.data.user.favorite.includes('123'))
+            })            
+            .catch(err=>{                            
+                localStorage.removeItem('token')
+                setErr({
+                    status: err.response.status,
+                    msg: err.response.data.msg
+                })
+            })
     }
 
     const logout = ()=>{
         // delete token in local storage
-
-
+        localStorage.removeItem('token')
+        setIsAuthenticated(false)
         setUser({})
     }
 
     // Admin actions
     // Add picture
     const addPic = (pic)=>{
+        // Define headers and body
         const body = JSON.stringify(pic)
         const config = {
             headers: {
-                "Content-type": "application/json"
+                "Content-type": "application/json"                
             }
         }
 
@@ -105,7 +228,7 @@ export const PicProvider = ({children})=>{
 
 
     return (
-        <picContext.Provider value={{pics, user, err, toggleFavor, toggleCart, placeOrder, logout, addPic}}>
+        <picContext.Provider value={{pics, user, isLoading, isAuthenticated, err, toggleFavor, toggleCart, placeOrder, register, login, logout, addPic}}>
             {children}
         </picContext.Provider>
     )

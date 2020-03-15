@@ -6,12 +6,11 @@ import {picContext} from '../context/context'
 import {Link} from 'react-router-dom'
 
 export const Image = ({className,img})=>{
-    const {toggleFavor,toggleCart,user} =useContext(picContext)
+    const {toggleFavor,toggleCart,user,isAuthenticated} =useContext(picContext)
     
     const [hovered, on, off] = useHover(false)
     
-    return (
-        
+    return (        
         <div 
             className={`image-container ${className}`}
             onMouseEnter={on}
@@ -21,14 +20,14 @@ export const Image = ({className,img})=>{
                 <img src={img.url} className='image-grid' alt='there is a beauty'/>
             </Link>
             {
-                user.email && 
+                isAuthenticated && 
                     (user.favorite.includes(img._id) ? 
                         <i className="ri-heart-fill favorite" onClick={()=>toggleFavor(img._id)}></i> :
                         hovered && <i className="ri-heart-line favorite" onClick={()=>{toggleFavor(img._id)}}></i>
                     )
             }
             {
-                user.email && 
+                isAuthenticated && 
                     (!user.haveBought.includes(img._id) && 
                         (user.inCart.includes(img._id) ?
                             <i className="ri-shopping-cart-fill cart" onClick={()=>toggleCart(img._id)}></i>:

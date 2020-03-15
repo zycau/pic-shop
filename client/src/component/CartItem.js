@@ -11,7 +11,6 @@ export const CartItem = ({id})=>{
     const iClass = hovered ? 'ri-delete-bin-fill' : 'ri-delete-bin-line'
 
     const currentPic = pics.find(pic=>pic._id==id)
-    console.log(id, currentPic)
     
     return (
         <div className='cart-item'>            
